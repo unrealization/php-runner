@@ -12,7 +12,7 @@ namespace unrealization\PHPClassCollection;
  * @subpackage Runner
  * @link http://php-classes.sourceforge.net/ PHP Class Collection
  * @author Dennis Wronka <reptiler@users.sourceforge.net>
- * @version 0.9.0
+ * @version 1.0.0
  * @license http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html LGPL 2.1
  */
 class Runner
@@ -49,8 +49,9 @@ class Runner
 	/**
 	 * Add a command to the command list
 	 * @param string $command
+	 * @return Runner
 	 */
-	public function addCommand(string $command)
+	public function addCommand(string $command): Runner
 	{
 		$this->commandList[] = array(
 				'command'	=> $command,
@@ -60,18 +61,22 @@ class Runner
 				'stdOut'	=> array(),
 				'stdErr'	=> array()
 				);
+		return $this;
 	}
 
 	/**
 	 * Load an array of commands into the command list
 	 * @param array $commandList
+	 * @return Runner
 	 */
-	public function loadCommandList(array $commandList)
+	public function loadCommandList(array $commandList): Runner
 	{
 		foreach ($commandList as $command)
 		{
 			$this->addCommand($command);
 		}
+
+		return $this;
 	}
 
 	/**
@@ -80,9 +85,9 @@ class Runner
 	 * @return array
 	 * @throws \OutOfBoundsException
 	 */
-	public function getCommandInfo(int $commandIndex = null): array
+	public function getCommandInfo(?int $commandIndex = null): array
 	{
-		if ($commandIndex === null)
+		if (is_null($commandIndex))
 		{
 			return $this->commandList;
 		}
@@ -156,19 +161,23 @@ class Runner
 	/**
 	 * Set the maximum number of parallel processes
 	 * @param int $maxProcesses
+	 * @return Runner
 	 */
-	public function setMaxProcesses(int $maxProcesses)
+	public function setMaxProcesses(int $maxProcesses): Runner
 	{
 		$this->maxProcesses = $maxProcesses;
+		return $this;
 	}
 
 	/**
 	 * Set the maximum runtime in seconds before a process is forcefully killed. 0 means unlimited
 	 * @param float $maxRunTime
+	 * @return Runner
 	 */
-	public function setMaxRunTime(float $maxRunTime)
+	public function setMaxRunTime(float $maxRunTime): Runner
 	{
 		$this->maxRunTime = $maxRunTime;
+		return $this;
 	}
 
 	/**
@@ -176,8 +185,9 @@ class Runner
 	 * @param int $commandIndex
 	 * @param string $channel
 	 * @param string $output
+	 * @return Runner
 	 */
-	private function logOutput(int $commandIndex, string $channel, string $output)
+	private function logOutput(int $commandIndex, string $channel, string $output): Runner
 	{
 		if ((strlen($output) > 0) && (is_array($this->commandList[$commandIndex][$channel])))
 		{
@@ -186,12 +196,15 @@ class Runner
 					'output'	=> $output
 					);
 		}
+
+		return $this;
 	}
 
 	/**
 	 * Process the command list
+	 * @return void
 	 */
-	public function run()
+	public function run(): void
 	{
 		$index = 0;
 		$runningProcs = array();
