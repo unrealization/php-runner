@@ -12,16 +12,16 @@ namespace unrealization\PHPClassCollection;
  * @subpackage Runner
  * @link http://php-classes.sourceforge.net/ PHP Class Collection
  * @author Dennis Wronka <reptiler@users.sourceforge.net>
- * @version 0.9.0
+ * @version 1.0.0
  * @license http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html LGPL 2.1
  */
 class Runner
 {
 	/**
-	 * The list of commands
+	 * The list of processes to be run
 	 * @var array
 	 */
-	private $commandList = array();
+	private $processList = array();
 	/**
 	 * Maximum number of parallel processes
 	 * @var int
@@ -34,123 +34,128 @@ class Runner
 	private $maxRunTime = 0;
 
 	/**
-	 * Constructor
-	 * @param array $commandList
-	 * @param int $maxProcesses
-	 * @param float $maxRunTime
-	 */
-	public function __construct(array $commandList = array(), int $maxProcesses = 1, float $maxRunTime = 0)
-	{
-		$this->loadCommandList($commandList);
-		$this->setMaxProcesses($maxProcesses);
-		$this->setMaxRunTime($maxRunTime);
-	}
-
-	/**
-	 * Add a command to the command list
-	 * @param string $command
-	 */
-	public function addCommand(string $command)
-	{
-		$this->commandList[] = array(
-				'command'	=> $command,
-				'started'	=> 0,
-				'ended'		=> 0,
-				'exitCode'	=> null,
-				'stdOut'	=> array(),
-				'stdErr'	=> array()
-				);
-	}
-
-	/**
-	 * Load an array of commands into the command list
-	 * @param array $commandList
-	 */
-	public function loadCommandList(array $commandList)
-	{
-		foreach ($commandList as $command)
-		{
-			$this->addCommand($command);
-		}
-	}
-
-	/**
-	 * Get information from the command list
-	 * @param int $commandIndex
-	 * @return array
-	 * @throws \OutOfBoundsException
-	 */
-	public function getCommandInfo(int $commandIndex = null): array
-	{
-		if ($commandIndex === null)
-		{
-			return $this->commandList;
-		}
-		else
-		{
-			if (isset($this->commandList[$commandIndex]))
-			{
-				return $this->commandList[$commandIndex];
-			}
-			else
-			{
-				throw new \OutOfBoundsException('Invalid index: '.$commandIndex);
-			}
-		}
-	}
-
-	/**
-	 * Get the current or total runtime of a specific command
-	 * @param int $commandIndex
+	 * Get the current or total runtime of a specific process
+	 * @param int $processIndex
 	 * @return float
 	 * @throws \OutOfBoundsException
 	 */
-	private function getCommandRunTime(int $commandIndex): float
+	private function getProcessRunTime(int $processIndex): float
 	{
-		if (isset($this->commandList[$commandIndex]))
+		if (isset($this->processList[$processIndex]))
 		{
-			if ($this->commandList[$commandIndex]['started'] == 0)
+			if ($this->processList[$processIndex]['started'] == 0)
 			{
 				return 0;
 			}
 
-			if ($this->commandList[$commandIndex]['ended'] == 0)
+			if ($this->processList[$processIndex]['ended'] == 0)
 			{
 				$endTime = microtime(true);
 			}
 			else
 			{
-				$endTime = $this->commandList[$commandIndex]['ended'];
+				$endTime = $this->processList[$processIndex]['ended'];
 			}
 
-			$runTime = $endTime - $this->commandList[$commandIndex]['started'];
+			$runTime = $endTime - $this->processList[$processIndex]['started'];
 			return $runTime;
 		}
 		else
 		{
-			throw new \OutOfBoundsException('Invalid index: '.$commandIndex);
+			throw new \OutOfBoundsException('Invalid index: '.$processIndex);
 		}
 	}
 
 	/**
-	 * Find information in the command list
+	 * Log output read from the processes
+	 * @param int $processIndex
+	 * @param string $channel
+	 * @param string $output
+	 */
+	private function logOutput(int $processIndex, string $channel, string $output)
+	{
+		if ((strlen($output) > 0) && (is_array($this->processList[$processIndex][$channel])))
+		{
+			$this->processList[$processIndex][$channel][] = array(
+				'time'		=> microtime(true),
+				'output'	=> $output
+			);
+		}
+	}
+
+	/**
+	 * Constructor
+	 * @param int $maxProcesses
+	 * @param float $maxRunTime
+	 */
+	public function __construct(int $maxProcesses = 1, float $maxRunTime = 0)
+	{
+		$this->setMaxProcesses($maxProcesses);
+		$this->setMaxRunTime($maxRunTime);
+	}
+
+	/**
+	 * Add a process to the process list
+	 * @param Process $process
+	 */
+	public function addProcess(Process $process): void
+	{
+		$this->procesList[] = array(
+			'process'	=> $process,
+			'started'	=> 0,
+			'ended'		=> 0,
+			'exitCode'	=> null,
+			'stdOut'	=> array(),
+			'stdErr'	=> array()
+		);
+	}
+
+	/**
+	 * Get information from the process list
+	 * @param int $processIndex
+	 * @return array
+	 * @throws \OutOfBoundsException
+	 */
+	public function getProcessInfo(int $processIndex = null): array
+	{
+		if ($processIndex === null)
+		{
+			return $this->processList;
+		}
+		else
+		{
+			if (isset($this->processList[$processIndex]))
+			{
+				return $this->processList[$processIndex];
+			}
+			else
+			{
+				throw new \OutOfBoundsException('Invalid index: '.$processIndex);
+			}
+		}
+	}
+
+	/**
+	 * Find information in the process list
 	 * @param string $filter
 	 * @param bool $regEx
 	 * @return array
 	 */
-	public function findCommandInfo(string $filter, bool $regEx = false): array
+	public function findProcessInfo(string $filter, bool $regEx = false): array
 	{
-		$foundCommands = array();
+		$foundProcesses = array();
 
-		foreach ($this->commandList as $command)
+		foreach ($this->processList as $process)
 		{
-			if ((($regEx === true) && (preg_match($filter, $command['command']))) || (($regEx === false) && ($command['command'] === $filter)))
+			$command = $process->getCommand();
+
+			if ((($regEx === true) && (preg_match($filter, $command))) || (($regEx === false) && ($command === $filter)))
 			{
-				$foundCommands[] = $command;
+				$foundProcesses[] = $process;
 			}
 		}
 
-		return $foundCommands;
+		return $foundProcesses;
 	}
 
 	/**
@@ -172,36 +177,20 @@ class Runner
 	}
 
 	/**
-	 * Log output read from the processes
-	 * @param int $commandIndex
-	 * @param string $channel
-	 * @param string $output
-	 */
-	private function logOutput(int $commandIndex, string $channel, string $output)
-	{
-		if ((strlen($output) > 0) && (is_array($this->commandList[$commandIndex][$channel])))
-		{
-			$this->commandList[$commandIndex][$channel][] = array(
-					'time'		=> microtime(true),
-					'output'	=> $output
-					);
-		}
-	}
-
-	/**
-	 * Process the command list
+	 * Process the process list
 	 */
 	public function run()
 	{
 		$index = 0;
 		$runningProcs = array();
 
-		while (($index < count($this->commandList)) || (count($runningProcs) > 0))
+		while (($index < count($this->processList)) || (count($runningProcs) > 0))
 		{
-			if (($index < count($this->commandList)) && (count($runningProcs) < $this->maxProcesses))
+			if (($index < count($this->processList)) && (count($runningProcs) < $this->maxProcesses))
 			{
-				$this->commandList[$index]['started'] = microtime(true);
-				$runningProcs[$index] = new Process($this->commandList[$index]['command']);
+				$runningProcs[$index] = $this->processList[$index]['process'];
+				$this->processList[$index]['started'] = microtime(true);
+				$runningProcs[$index]->start();
 				$index++;
 			}
 
@@ -212,17 +201,17 @@ class Runner
 
 				if ($proc->isRunning() == false)
 				{
-					if (($this->commandList[$key]['ended'] == 0) && ($this->commandList[$key]['exitCode'] == null))
+					if (($this->processList[$key]['ended'] == 0) && ($this->processList[$key]['exitCode'] == null))
 					{
-						$this->commandList[$key]['ended'] = microtime(true);
-						$this->commandList[$key]['exitCode'] = $proc->getExitCode();
+						$this->processList[$key]['ended'] = microtime(true);
+						$this->processList[$key]['exitCode'] = $proc->getExitCode();
 					}
 					else
 					{
 						unset($runningProcs[$key]);
 					}
 				}
-				elseif (($this->maxRunTime > 0) && ($this->getCommandRunTime($key) > $this->maxRunTime))
+				elseif (($this->maxRunTime > 0) && ($this->getProcessRunTime($key) > $this->maxRunTime))
 				{
 					$this->logOutput($key, 'stdErr', 'Killing process'.PHP_EOL);
 					$proc->kill(9);
@@ -239,23 +228,25 @@ class Runner
 	 */
 	public static function runCommand(string $command, float $maxRunTime = 0): array
 	{
-		$runner = new self(array($command), 1, $maxRunTime);
+		$process = new Process($command, false);
+		$runner = new self(1, $maxRunTime);
+		$runner->addProcess($process);
 		$runner->run();
 
-		$commandInfo = $runner->getCommandInfo(0);
+		$processInfo = $runner->getProcessInfo(0);
 		$output = array(
 				'stdOut'	=> '',
 				'stdErr'	=> '',
-				'exitCode'	=> $commandInfo['exitCode'],
-				'runTime'	=> round($commandInfo['ended'] - $commandInfo['started'], 2)
+				'exitCode'	=> $processInfo['exitCode'],
+				'runTime'	=> round($processInfo['ended'] - $processInfo['started'], 2)
 				);
 
-		foreach ($commandInfo['stdOut'] as $entry)
+		foreach ($processInfo['stdOut'] as $entry)
 		{
 			$output['stdOut'] .= $entry['output'];
 		}
 
-		foreach ($commandInfo['stdErr'] as $entry)
+		foreach ($processInfo['stdErr'] as $entry)
 		{
 			$output['stdErr'] .= $entry['output'];
 		}
