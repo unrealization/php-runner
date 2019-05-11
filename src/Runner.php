@@ -12,7 +12,7 @@ namespace unrealization\PHPClassCollection;
  * @subpackage Runner
  * @link http://php-classes.sourceforge.net/ PHP Class Collection
  * @author Dennis Wronka <reptiler@users.sourceforge.net>
- * @version 1.0.0
+ * @version 2.0.0
  * @license http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html LGPL 2.1
  */
 class Runner
@@ -34,56 +34,6 @@ class Runner
 	private $maxRunTime = 0;
 
 	/**
-	 * Get the current or total runtime of a specific process
-	 * @param int $processIndex
-	 * @return float
-	 * @throws \OutOfBoundsException
-	 */
-	private function getProcessRunTime(int $processIndex): float
-	{
-		if (isset($this->processList[$processIndex]))
-		{
-			if ($this->processList[$processIndex]['started'] == 0)
-			{
-				return 0;
-			}
-
-			if ($this->processList[$processIndex]['ended'] == 0)
-			{
-				$endTime = microtime(true);
-			}
-			else
-			{
-				$endTime = $this->processList[$processIndex]['ended'];
-			}
-
-			$runTime = $endTime - $this->processList[$processIndex]['started'];
-			return $runTime;
-		}
-		else
-		{
-			throw new \OutOfBoundsException('Invalid index: '.$processIndex);
-		}
-	}
-
-	/**
-	 * Log output read from the processes
-	 * @param int $processIndex
-	 * @param string $channel
-	 * @param string $output
-	 */
-	private function logOutput(int $processIndex, string $channel, string $output)
-	{
-		if ((strlen($output) > 0) && (is_array($this->processList[$processIndex][$channel])))
-		{
-			$this->processList[$processIndex][$channel][] = array(
-				'time'		=> microtime(true),
-				'output'	=> $output
-			);
-		}
-	}
-
-	/**
 	 * Constructor
 	 * @param int $maxProcesses
 	 * @param float $maxRunTime
@@ -97,41 +47,29 @@ class Runner
 	/**
 	 * Add a process to the process list
 	 * @param Process $process
+	 * @return Runner
 	 */
-	public function addProcess(Process $process): void
+	public function addProcess(Process $process): Runner
 	{
-		$this->procesList[] = array(
-			'process'	=> $process,
-			'started'	=> 0,
-			'ended'		=> 0,
-			'exitCode'	=> null,
-			'stdOut'	=> array(),
-			'stdErr'	=> array()
-		);
+		$this->processList[] = new ProcessInfo($process);
+		return $this;
 	}
 
 	/**
 	 * Get information from the process list
 	 * @param int $processIndex
-	 * @return array
+	 * @return ProcessInfo
 	 * @throws \OutOfBoundsException
 	 */
-	public function getProcessInfo(int $processIndex = null): array
+	public function getProcessInfo(int $processIndex): ProcessInfo
 	{
-		if ($processIndex === null)
+		if (isset($this->processList[$processIndex]))
 		{
-			return $this->processList;
+			return $this->processList[$processIndex];
 		}
 		else
 		{
-			if (isset($this->processList[$processIndex]))
-			{
-				return $this->processList[$processIndex];
-			}
-			else
-			{
-				throw new \OutOfBoundsException('Invalid index: '.$processIndex);
-			}
+			throw new \OutOfBoundsException('Invalid index: '.$processIndex);
 		}
 	}
 
@@ -145,13 +83,13 @@ class Runner
 	{
 		$foundProcesses = array();
 
-		foreach ($this->processList as $process)
+		foreach ($this->processList as $index => $process)
 		{
 			$command = $process->getCommand();
 
 			if ((($regEx === true) && (preg_match($filter, $command))) || (($regEx === false) && ($command === $filter)))
 			{
-				$foundProcesses[] = $process;
+				$foundProcesses[] = $this->processList[$index];
 			}
 		}
 
@@ -161,25 +99,29 @@ class Runner
 	/**
 	 * Set the maximum number of parallel processes
 	 * @param int $maxProcesses
+	 * @return Runner
 	 */
-	public function setMaxProcesses(int $maxProcesses)
+	public function setMaxProcesses(int $maxProcesses): Runner
 	{
 		$this->maxProcesses = $maxProcesses;
+		return $this;
 	}
 
 	/**
 	 * Set the maximum runtime in seconds before a process is forcefully killed. 0 means unlimited
 	 * @param float $maxRunTime
+	 * @return Runner
 	 */
-	public function setMaxRunTime(float $maxRunTime)
+	public function setMaxRunTime(float $maxRunTime): Runner
 	{
 		$this->maxRunTime = $maxRunTime;
+		return $this;
 	}
 
 	/**
 	 * Process the process list
 	 */
-	public function run()
+	public function run(): void
 	{
 		$index = 0;
 		$runningProcs = array();
@@ -188,33 +130,42 @@ class Runner
 		{
 			if (($index < count($this->processList)) && (count($runningProcs) < $this->maxProcesses))
 			{
-				$runningProcs[$index] = $this->processList[$index]['process'];
-				$this->processList[$index]['started'] = microtime(true);
-				$runningProcs[$index]->start();
+				$runningProcs[$index] = $this->processList[$index];
+				$runningProcs[$index]->hasStarted()->getProcess()->start();
 				$index++;
 			}
 
 			foreach ($runningProcs as $key => $proc)
 			{
-				$this->logOutput($key, 'stdOut', $proc->readSTDOUT());
-				$this->logOutput($key ,'stdErr', $proc->readSTDERR());
+				$output = $proc->getProcess()->readSTDOUT();
 
-				if ($proc->isRunning() == false)
+				if (!empty($output))
 				{
-					if (($this->processList[$key]['ended'] == 0) && ($this->processList[$key]['exitCode'] == null))
+					$proc->logStdOut($output);
+				}
+
+				$output = $proc->getProcess()->readSTDERR();
+
+				if (!empty($output))
+				{
+					$proc->logStdErr($output);
+				}
+
+				if ($proc->getProcess()->isRunning() == false)
+				{
+					if (($proc->getEndTime() === 0) && (is_null($proc->getExitCode())))
 					{
-						$this->processList[$key]['ended'] = microtime(true);
-						$this->processList[$key]['exitCode'] = $proc->getExitCode();
+						$proc->hasEnded();
 					}
 					else
 					{
 						unset($runningProcs[$key]);
 					}
 				}
-				elseif (($this->maxRunTime > 0) && ($this->getProcessRunTime($key) > $this->maxRunTime))
+				elseif (($this->maxRunTime > 0) && ($proc->getRunTime() > $this->maxRunTime))
 				{
-					$this->logOutput($key, 'stdErr', 'Killing process'.PHP_EOL);
-					$proc->kill(9);
+					$proc->logStdErr('Killing process'.PHP_EOL);
+					$proc->getProcess()->kill(9);
 				}
 			}
 		}
@@ -224,9 +175,9 @@ class Runner
 	 * Run the given command
 	 * @param string $command
 	 * @param float $maxRunTime
-	 * @return array
+	 * @return ProcessInfo
 	 */
-	public static function runCommand(string $command, float $maxRunTime = 0): array
+	public static function runCommand(string $command, float $maxRunTime = 0): ProcessInfo
 	{
 		$process = new Process($command, false);
 		$runner = new self(1, $maxRunTime);
@@ -234,24 +185,7 @@ class Runner
 		$runner->run();
 
 		$processInfo = $runner->getProcessInfo(0);
-		$output = array(
-				'stdOut'	=> '',
-				'stdErr'	=> '',
-				'exitCode'	=> $processInfo['exitCode'],
-				'runTime'	=> round($processInfo['ended'] - $processInfo['started'], 2)
-				);
-
-		foreach ($processInfo['stdOut'] as $entry)
-		{
-			$output['stdOut'] .= $entry['output'];
-		}
-
-		foreach ($processInfo['stdErr'] as $entry)
-		{
-			$output['stdErr'] .= $entry['output'];
-		}
-
-		return $output;
+		return $processInfo;
 	}
 }
 ?>
