@@ -12,7 +12,7 @@ namespace unrealization\PHPClassCollection;
  * @subpackage Runner
  * @link http://php-classes.sourceforge.net/ PHP Class Collection
  * @author Dennis Wronka <reptiler@users.sourceforge.net>
- * @version 0.0.1
+ * @version 0.0.2
  * @license http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html LGPL 2.1
  */
 class ProcessInfo
@@ -20,7 +20,6 @@ class ProcessInfo
 	private $process	= null;
 	private $startTime	= 0;
 	private $endTime	= 0;
-	private $exitCode	= null;
 	private $stdOut		= array();
 	private $stdErr		= array();
 
@@ -43,7 +42,6 @@ class ProcessInfo
 	public function hasEnded(): ProcessInfo
 	{
 		$this->endTime = microtime(true);
-		$this->exitCode = $this->process->getExitCode();
 		return $this;
 	}
 
@@ -75,9 +73,14 @@ class ProcessInfo
 		return $this->endTime;
 	}
 
+	/**
+	 * Get the process's exit code.
+	 * @return int|NULL
+	 * @obsolete Use getProcess()->getExitCode() instead.
+	 */
 	public function getExitCode(): ?int
 	{
-		return $this->exitCode;
+		return $this->process->getExitCode();
 	}
 
 	public function getStdOut(): array
