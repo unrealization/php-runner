@@ -12,7 +12,7 @@ namespace unrealization\PHPClassCollection;
  * @subpackage Runner
  * @link http://php-classes.sourceforge.net/ PHP Class Collection
  * @author Dennis Wronka <reptiler@users.sourceforge.net>
- * @version 2.0.0
+ * @version 2.0.1
  * @license http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html LGPL 2.1
  */
 class Runner
@@ -83,13 +83,13 @@ class Runner
 	{
 		$foundProcesses = array();
 
-		foreach ($this->processList as $index => $process)
+		foreach ($this->processList as $process)
 		{
-			$command = $process->getCommand();
+			$command = $process->getProcess()->getCommand();
 
 			if ((($regEx === true) && (preg_match($filter, $command))) || (($regEx === false) && ($command === $filter)))
 			{
-				$foundProcesses[] = $this->processList[$index];
+				$foundProcesses[] = $process;
 			}
 		}
 
@@ -151,9 +151,9 @@ class Runner
 					$proc->logStdErr($output);
 				}
 
-				if ($proc->getProcess()->isRunning() == false)
+				if ($proc->getProcess()->isRunning() === false)
 				{
-					if (($proc->getEndTime() === 0) && (is_null($proc->getExitCode())))
+					if ($proc->getEndTime() === 0.0)
 					{
 						$proc->hasEnded();
 					}
@@ -183,7 +183,6 @@ class Runner
 		$runner = new self(1, $maxRunTime);
 		$runner->addProcess($process);
 		$runner->run();
-
 		$processInfo = $runner->getProcessInfo(0);
 		return $processInfo;
 	}
