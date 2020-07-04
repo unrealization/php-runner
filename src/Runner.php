@@ -12,7 +12,7 @@ namespace unrealization\PHPClassCollection;
  * @subpackage Runner
  * @link http://php-classes.sourceforge.net/ PHP Class Collection
  * @author Dennis Wronka <reptiler@users.sourceforge.net>
- * @version 2.0.1
+ * @version 2.0.2
  * @license http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html LGPL 2.1
  */
 class Runner
@@ -42,6 +42,18 @@ class Runner
 	{
 		$this->setMaxProcesses($maxProcesses);
 		$this->setMaxRunTime($maxRunTime);
+	}
+
+	/**
+	 * Add a command to the process list
+	 * @param string $command
+	 * @return Runner
+	 */
+	public function addCommand(string $command): Runner
+	{
+		$process = new Process($command, false);
+		$this->processList = new ProcessInfo($process);
+		return $this;
 	}
 
 	/**
@@ -77,7 +89,7 @@ class Runner
 	 * Find information in the process list
 	 * @param string $filter
 	 * @param bool $regEx
-	 * @return array
+	 * @return ProcessInfo[]
 	 */
 	public function findProcessInfo(string $filter, bool $regEx = false): array
 	{
@@ -179,12 +191,10 @@ class Runner
 	 */
 	public static function runCommand(string $command, float $maxRunTime = 0): ProcessInfo
 	{
-		$process = new Process($command, false);
 		$runner = new self(1, $maxRunTime);
-		$runner->addProcess($process);
+		$runner->addCommand($command);
 		$runner->run();
 		$processInfo = $runner->getProcessInfo(0);
 		return $processInfo;
 	}
 }
-?>
