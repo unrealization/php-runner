@@ -12,7 +12,7 @@ namespace unrealization\PHPClassCollection;
  * @subpackage Runner
  * @link http://php-classes.sourceforge.net/ PHP Class Collection
  * @author Dennis Wronka <reptiler@users.sourceforge.net>
- * @version 2.0.2
+ * @version 2.0.3
  * @license http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html LGPL 2.1
  */
 class Runner
@@ -52,7 +52,7 @@ class Runner
 	public function addCommand(string $command): Runner
 	{
 		$process = new Process($command, false);
-		$this->processList = new ProcessInfo($process);
+		$this->processList[] = new ProcessInfo($process);
 		return $this;
 	}
 
