@@ -6,13 +6,15 @@ declare(strict_types=1);
  * @link http://php-classes.sourceforge.net/ PHP Class Collection
  * @author Dennis Wronka <reptiler@users.sourceforge.net>
  */
-namespace unrealization\PHPClassCollection;
+namespace unrealization;
+
+use \unrealization\Runner\ProcessInfo;
 /**
  * @package PHPClassCollection
  * @subpackage Runner
  * @link http://php-classes.sourceforge.net/ PHP Class Collection
  * @author Dennis Wronka <reptiler@users.sourceforge.net>
- * @version 2.0.3
+ * @version 3.0.0
  * @license http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html LGPL 2.1
  */
 class Runner
@@ -21,17 +23,17 @@ class Runner
 	 * The list of processes to be run
 	 * @var array
 	 */
-	private $processList = array();
+	private array $processList = array();
 	/**
 	 * Maximum number of parallel processes
 	 * @var int
 	 */
-	private $maxProcesses = 1;
+	private int $maxProcesses = 1;
 	/**
 	 * Maximum runtime in seconds before a process is forcefully killed. 0 means unlimited
 	 * @var float
 	 */
-	private $maxRunTime = 0;
+	private float $maxRunTime = 0;
 
 	/**
 	 * Constructor

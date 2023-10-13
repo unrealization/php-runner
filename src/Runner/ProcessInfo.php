@@ -6,22 +6,24 @@ declare(strict_types=1);
  * @link http://php-classes.sourceforge.net/ PHP Class Collection
  * @author Dennis Wronka <reptiler@users.sourceforge.net>
  */
-namespace unrealization\PHPClassCollection;
+namespace unrealization\Runner;
+
+use \unrealization\Process;
 /**
  * @package PHPClassCollection
  * @subpackage Runner
  * @link http://php-classes.sourceforge.net/ PHP Class Collection
  * @author Dennis Wronka <reptiler@users.sourceforge.net>
- * @version 0.0.2
+ * @version 0.0.3
  * @license http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html LGPL 2.1
  */
 class ProcessInfo
 {
-	private $process	= null;
-	private $startTime	= 0;
-	private $endTime	= 0;
-	private $stdOut		= array();
-	private $stdErr		= array();
+	private ?Process $process	= null;
+	private float $startTime	= 0;
+	private float $endTime		= 0;
+	private array $stdOut		= array();
+	private array $stdErr		= array();
 
 	public function __construct(Process $process)
 	{
@@ -95,12 +97,12 @@ class ProcessInfo
 
 	public function getRunTime(): float
 	{
-		if ($this->startTime === 0)
+		if ($this->startTime === (float)0)
 		{
 			return 0;
 		}
 
-		if ($this->endTime === 0)
+		if ($this->endTime === (float)0)
 		{
 			$endTime = microtime(true);
 		}

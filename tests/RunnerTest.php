@@ -1,13 +1,13 @@
 <?php
 use PHPUnit\Framework\TestCase;
-use unrealization\PHPClassCollection\Process;
-use unrealization\PHPClassCollection\ProcessInfo;
-use unrealization\PHPClassCollection\Runner;
+use unrealization\Process;
+use unrealization\Runner\ProcessInfo;
+use unrealization\Runner;
 
 /**
  * ProcessInfo test case.
- * @covers unrealization\PHPClassCollection\Runner
- * @uses unrealization\PHPClassCollection\ProcessInfo
+ * @covers unrealization\Runner
+ * @uses unrealization\Runner\ProcessInfo
  */
 class RunnerTest extends TestCase
 {
