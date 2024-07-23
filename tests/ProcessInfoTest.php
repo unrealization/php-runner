@@ -93,9 +93,7 @@ class ProcessInfoTest extends TestCase
 
 	public function testGetExitCode()
 	{
-		$process = $this->createMock(Process::class);
-		$process->method('isRunning')->willReturn(true, false);
-		$process->method('getExitCode')->willReturn(null, 1);
+		$process = new Process('php --version', false);
 		$info = new ProcessInfo($process);
 		$code = $info->getExitCode();
 		$this->assertNull($code);
@@ -109,7 +107,7 @@ class ProcessInfoTest extends TestCase
 		$info->hasEnded();
 		$code = $info->getExitCode();
 		$this->assertIsInt($code);
-		$this->assertSame(1, $code);
+		$this->assertSame(0, $code);
 	}
 
 	public function testGetStdOut()
