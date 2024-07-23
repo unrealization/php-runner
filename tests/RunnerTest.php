@@ -53,14 +53,22 @@ class RunnerTest extends TestCase
 		$this->assertSame(1, count($processes));
 	}
 
-	public function testRun()
-	{
-		$this->markTestIncomplete();
-	}
-
 	public function testRunCommand()
 	{
-		$info = Runner::runCommand('');
+		$info = Runner::runCommand('php --version');
 		$this->assertInstanceOf(ProcessInfo::class, $info);
+		$this->assertSame(0, $info->getExitCode());
+		$this->assertStringContainsString('PHP '.PHP_VERSION, $info->getStdOut()[0]['output']);
+
+		$info = Runner::runCommand('php --version > /dev/stderr');
+		$this->assertInstanceOf(ProcessInfo::class, $info);
+		$this->assertSame(0, $info->getExitCode());
+		$this->assertStringContainsString('PHP '.PHP_VERSION, $info->getStdErr()[0]['output']);
+	}
+
+	public function testMaxRunTime()
+	{
+		$info = Runner::runCommand('sleep 2', 1);
+		$this->assertSame(-1, $info->getExitCode());
 	}
 }
