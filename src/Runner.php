@@ -179,7 +179,7 @@ class Runner
 				elseif (($this->maxRunTime > 0) && ($proc->getRunTime() > $this->maxRunTime))
 				{
 					$proc->logStdErr('Killing process'.PHP_EOL);
-					$proc->getProcess()->kill(9);
+					$proc->getProcess()->kill(SIGKILL);
 				}
 			}
 		}
